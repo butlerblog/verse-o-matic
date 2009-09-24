@@ -1,10 +1,10 @@
 === Verse-O-Matic ===
 Contributors: cbutlerjr
 Donate link: http://butlerblog.com/verse-o-matic/
-Tags: random, verse, VOTD
+Tags: plugin, random, quotes, sidebar, widget, verse, VOTD
 Requires at least: 2.5
 Tested up to: 2.8.4
-Stable tag: 4.0.0
+Stable tag: 4.0.1
 
 This is a plugin to insert a scripture verse into your blog. 
 
