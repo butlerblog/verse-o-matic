@@ -568,6 +568,7 @@ function vom_admin()
 			
 			?>
 			<div class="wrap">
+            <div id="icon-options-general" class="icon32"><br /></div>
 				<h2>Manage Verse-O-Matic</h2>
 				<h3><?php _e('Settings');?></h3>
 				<form name="settings" id="settings" method="post" action="<?php echo $_SERVER['PHP_SELF']?>?page=verse-o-matic.php">
