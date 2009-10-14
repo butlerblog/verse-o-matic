@@ -3,13 +3,15 @@
 Plugin Name: Verse-O-Matic
 Plugin URI: http://butlerblog.com/verse-o-matic/
 Description: Displays a single random verse. Verses can be added and edited through the Wordpress admin.  To manage your settings, there is a <a href="options-general.php?page=verse-o-matic.php">'Verse-O-Matic' tab</a> under the 'Settings' tab.  <a href="http://butlerblog.com/verse-o-matic/">Click here</a> for usage instructions.
-Version: 4.0.1
+Version: 4.1.0
 Author: Chad Butler
 Author URI: http://butlerblog.com/
 
-    Copyright (c) 2009  Chad Butler (email : chad@butlerblog.com)
+    
+	Copyright (c) 2009  Chad Butler (email : chad@butlerblog.com)
 
-    This program is free software; you can redistribute it and/or modify
+    
+	This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 3 of the License, or
     (at your option) any later version.
@@ -19,7 +21,7 @@ Author URI: http://butlerblog.com/
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    http://www.gnu.org/licenses/
+    For full details of the license, visit http://www.gnu.org/licenses/
 */
 
 
@@ -27,7 +29,7 @@ Author URI: http://butlerblog.com/
 // NOT a good idea to change these.
 global $wpdb;
 define("WP_VOM_VERSES", $wpdb->prefix."vom");
-define("WP_VOM_VERSION", "4.0.1");
+define("WP_VOM_VERSION", "4.1.0");
 
 // this is the actual verse-o-matic
 function verse_o_matic()
@@ -41,11 +43,12 @@ function verse_o_matic()
 	$displayMethod     = $vom_options_arr[2]; //random, daily, daily specific, static specific	
 	$vom_staticID      = $vom_options_arr[3]; //get the static id, if there is one
 	
+	$today = date('Y-m-d');
+	
 	//Get the verse based on display
 	switch ($displayMethod) {
 	
 	case "daily":
-		$today = date('Y-m-d');
 		$sql = "select * from ".WP_VOM_VERSES." where visible='yes' and date='{$today}'";
 		$verseArr = $wpdb->get_row($sql, ARRAY_N);
 		
@@ -60,13 +63,12 @@ function verse_o_matic()
 		}	
 		break;
 	
-	case "daily_specific":
-		$today = date('Y-m-d');
+	case "daily_specific":	
 		$sql = "select * from ".WP_VOM_VERSES." where visible='yes' and date='{$today}'";
 		$verseArr = $wpdb->get_row($sql, ARRAY_N);
 		
 		// This sets a random verse for the day if you are set for daily specific,
-		// but there is no verse set with today's date. Otherwise, you get blank output.
+		// but if there is no verse set with today's date you get blank output.
 		if ( empty($verseArr) ) { 
 			$sql = "select * from ".WP_VOM_VERSES." where visible='yes' order by rand() limit 1";
 			$newVerseArr = $wpdb->get_row($sql, ARRAY_N);
@@ -79,7 +81,6 @@ function verse_o_matic()
 		break;
 		
 	case "static_specific":
-	        //$vom_staticID = get_option('vom_staticID');
 		$sql = "select * from ".WP_VOM_VERSES." where visible='yes' and vomID='{$vom_staticID}'";
 		$verseArr = $wpdb->get_row($sql, ARRAY_N);
 		break;
@@ -89,10 +90,16 @@ function verse_o_matic()
 		$verseArr = $wpdb->get_row($sql, ARRAY_N);
 		break;
 	
+	// The feeds employ the same process, differentiated in the rss function
+	case "esv_votd":
+	case "bg_votd":
+		$verseArr = vom_get_rss($displayMethod);
+		break;
+	
 	} //end select display method
 	
 	//get the size of the array
-	$verseArrCount = count($verseArr);
+	//$verseArrCount = count($verseArr);
 	
 	//put array contents into variables
 	$verseVrsn = $verseArr[1]; //$verseVrsn => Translation version i.e. ESV or KJV
@@ -151,6 +158,7 @@ function verse_o_matic()
 		  echo " | <a href=\"".$bibleGateway."51\">NLT</a>\n";
 		}
 	  }
+	  echo "<br /><br /><small>".WP_VOM_CREDIT."</small>\n";
 	  echo "</div>\n";
 	  echo "<!-- end alternate version lookup -->\n";
 	}
@@ -302,10 +310,10 @@ function vom_admin()
 				limit 1");
 			
 			if (empty($result) || empty($result[0]->vomID)) {?>
-				<div class="error"><p><strong>Failure:</strong> Verse-O-Matic experienced and error and nothing was inserted.</p></div>
+				<div class="error"><p><strong><?php _e('Failure:'); ?></strong> Verse-O-Matic <?php _e('experienced and error and nothing was inserted.'); ?></p></div>
 				<?php
 			} else {?>
-				<div id="message" class="updated fade"><p>Verse-O-Matic successfully added <?php echo $book." ".$chapter.":".$verse;?> to the database.</p></div>
+				<div id="message" class="updated fade"><p>Verse-O-Matic <?php _e('successfully added'); echo $book." ".$chapter.":".$verse; _e('to the database.'); ?></p></div>
 				<?php
 			}
 			break;
@@ -314,7 +322,7 @@ function vom_admin()
 		case "update":	
 			
 			if (empty($vomID)) {?>
-				<div class="error"><p><strong>Failure:</strong> No verse ID.  Giving up...</p></div>
+				<div class="error"><p><strong><?php _e('Failure:');?></strong> <?php _e('No verse ID.  Giving up...'); ?></p></div>
 				<?php		
 			} else {
 					
@@ -339,11 +347,11 @@ function vom_admin()
 				
 				if (empty($result) || empty($result[0]->vomID)) {
 					?>
-					<div class="error"><p><strong>Failure:</strong> Verse-O-Matic was unable to edit the verse.  Try again?</p></div>
+					<div class="error"><p><strong><?php _e('Failure:');?></strong> Verse-O-Matic <?php _e('was unable to edit the verse.  Try again?');?></p></div>
 					<?php
 				} else {
 					?>
-					<div id="message" class="updated fade"><p>Verse-O-Matic updated <?php echo $book." ".$chapter.":".$verse;?> successfully!</p></div>
+					<div id="message" class="updated fade"><p>Verse-O-Matic <?php _e('updated'); echo $book." ".$chapter.":".$verse." "; _e('successfully!');?></p></div>
 					<?php
 				}		
 			}
@@ -354,7 +362,7 @@ function vom_admin()
 		
 			if (empty($vomID)) {
 				?>
-				<div class="error"><p><strong>Failure:</strong> No verse ID given. Nothing was deleted.</p></div>
+				<div class="error"><p><strong><?php _e('Failure:');?></strong> <?php _e('No verse ID given. Nothing was deleted.');?></p></div>
 				<?php			
 			} else {
 				$sql = "delete from ".WP_VOM_VERSES." where vomID = '".mysql_escape_string($vomID)."'";
@@ -365,11 +373,11 @@ function vom_admin()
 				
 				if (empty($result) || empty($result[0]->vomID)) {
 					?>
-					<div id="message" class="updated fade"><p><strong><?php echo $book." ".$chapter.":".$verse;?></strong> deleted successfully</p></div>
+					<div id="message" class="updated fade"><p><strong><?php echo $book." ".$chapter.":".$verse;?></strong> <?php _e('deleted successfully');?></p></div>
 					<?php
 				} else {
 					?>
-					<div class="error"><p><strong>Failure:</strong> Nothing was successfully deletd.</p></div>
+					<div class="error"><p><strong><?php _e('Failure:');?></strong> <?php _e('Nothing was successfully deletd.');?></p></div>
 					<?php
 				}		
 			}
@@ -383,7 +391,7 @@ function vom_admin()
 			
 			
 			?>
-			<div id="message" class="updated fade"><p>Verse-O-Matic settings updated!</p></div>
+			<div id="message" class="updated fade"><p>Verse-O-Matic <?php _e('settings updated!');?></p></div>
 			<?php	
 			break;
 			
@@ -393,7 +401,7 @@ function vom_admin()
 			$sql = "update ".WP_VOM_VERSES." set date=null";
 			$wpdb->query($sql);?>
 			
-			<div id="message" class="updated fade"><p>Daily random verse successfully reset!</p></div>
+			<div id="message" class="updated fade"><p><?php _e('Daily random verse successfully reset!');?></p></div>
 			<?php
 		
 		} // end of handling data
@@ -549,7 +557,9 @@ function vom_admin()
 		
 		if ($action == 'edit') {?>
 			<div class="wrap">
-				<h2><?php _e('Edit Verse'); ?></h2>
+            <div id="icon-options-general" class="icon32"><br /></div>
+				<h2>Manage Verse-O-Matic</h2>
+				<h3><?php _e('Edit Verse'); ?></h3>
 				<?php
 				if (empty($vomID)) {
 					echo "<div class=\"error\"><p>Verse ID not received, Cannot edit. <a href=\"options-general.php?page=verse-o-matic.php\">Go back</a> and try again?</p></div>";
@@ -572,47 +582,48 @@ function vom_admin()
 				<h2>Manage Verse-O-Matic</h2>
 				<h3><?php _e('Settings');?></h3>
 				<form name="settings" id="settings" method="post" action="<?php echo $_SERVER['PHP_SELF']?>?page=verse-o-matic.php">
-				
-			<table width="100%" cellpadding="3" cellspacing="3">
-			  <tr> 
-				<td width="100">Verse-O-Matic version <?php echo WP_VOM_VERSION; ?></td>
-				<td align="right" nowrap>Display Method</td>
-				<td align="left"> <select name="vom_display">
-					<option value="random" <?php if ($displayMethod=="random") {echo "selected";}?>>Random</option>
-					<option value="daily"  <?php if ($displayMethod=="daily") {echo "selected";}?>>Daily Random</option>
-					<option value="daily_specific"    <?php if ($displayMethod=="daily_specific") {echo "selected";}?>>Daily Specific</option>
-					<option value="static_specific" <?php if ($displayMethod=="static_specific") {echo "selected";}?>>Static Specific</option>
-				  </select> </td>
-				<td align="right">Turn on alternate version links?</td>
-				<td> <select name="vom_switch">
-					<option value="true"  <?php if ($altVersion=="true") {echo "selected";}?>>Yes&nbsp;&nbsp;</option>
-					<option value="false" <?php if ($altVersion=="false"){echo "selected";}?>>No</option>
-				  </select> </td>
-			  </tr>
-			  <tr> 
-				<td nowrap><p><a href="http://butlerblog.com/verse-o-matic/">Check 
-					for upgrade &raquo;</a></p></td>
-				<td align="right" nowrap>Static ID</td>
-				<td align="left"><input name="vom_staticID" type="text" size="3" maxlength="10" value="<?php echo $staticSpecific ?>"></td>
-				<td align="right" nowrap>Limit number of alternate version links?</td>
-				<td> <select name="vom_limit">
-					<option value="true"  <?php if ($altBarSize=="true")  {echo "selected";}?>>Yes&nbsp;&nbsp;</option>
-					<option value="false" <?php if ($altBarSize=="false") {echo "selected";}?>>No</option>
-				  </select> </td>
-			  </tr>
-			  <tr> 
-				<td>&nbsp;</td>
-				<td>&nbsp;</td>
-				<td>&nbsp;</td>
-				<td align="right">
-					</td>
-				<td align="left"> <input type="hidden" name="action" value="update_settings"> 
-				  <input type="submit" name="EditSettings" value="Edit Settings &raquo;" style="font-weight: bold;" tabindex="4" class="button" /> 
-				</td>
-			  </tr>
-			</table>
+                    <table width="100%" cellpadding="3" cellspacing="3">
+                      <tr> 
+                        <td width="100" nowrap><a href="http://butlerblog.com/verse-o-matic/"><?php _e('Verse-O-Matic'); ?></a></td>
+                        <td align="right" nowrap>Display Method</td>
+                        <td align="left"> <select name="vom_display">
+                            <option value="random" <?php if ($displayMethod=="random") {echo "selected";}?>>Random</option>
+                            <option value="daily"  <?php if ($displayMethod=="daily") {echo "selected";}?>>Daily Random</option>
+                            <option value="daily_specific"  <?php if ($displayMethod=="daily_specific") {echo "selected";}?>>Daily Specific</option>
+                            <option value="static_specific" <?php if ($displayMethod=="static_specific") {echo "selected";}?>>Static Specific</option>               
+                            <option value="esv_votd" <?php if ($displayMethod=="esv_votd") {echo "selected";}?>>ESV VOTD</option>
+                            <option value="bg_votd"  <?php if ($displayMethod=="bg_votd") {echo "selected";}?>>Bible Gateway VOTD</option>
+                          </select> </td>
+                        <td align="right">Turn on alternate version links?</td>
+                        <td> <select name="vom_switch">
+                            <option value="true"  <?php if ($altVersion=="true") {echo "selected";}?>>Yes&nbsp;&nbsp;</option>
+                            <option value="false" <?php if ($altVersion=="false"){echo "selected";}?>>No</option>
+                          </select> </td>
+                      </tr>
+                      <tr> 
+                        <td nowrap><p> <?php _e('version: '); echo WP_VOM_VERSION; ?></p></td>
+                        <td align="right" nowrap>Static ID</td>
+                        <td align="left"><input name="vom_staticID" type="text" size="3" maxlength="10" value="<?php echo $staticSpecific ?>"></td>
+                        <td align="right" nowrap>Limit number of alternate version links?</td>
+                        <td> <select name="vom_limit">
+                            <option value="true"  <?php if ($altBarSize=="true")  {echo "selected";}?>>Yes&nbsp;&nbsp;</option>
+                            <option value="false" <?php if ($altBarSize=="false") {echo "selected";}?>>No</option>
+                          </select> </td>
+                      </tr>
+                      <tr> 
+                        <td>&nbsp;</td>
+                        <td>&nbsp;</td>
+                        <td>&nbsp;</td>
+                        <td align="right">
+                            </td>
+                        <td align="left"> <input type="hidden" name="action" value="update_settings"> 
+                          <input type="submit" name="EditSettings" value="Edit Settings &raquo;" style="font-weight: bold;" tabindex="4" class="button" /> 
+                        </td>
+                      </tr>
+                    </table>
 				</form>
 				<?php vom_display_list();?>
+            	<p>&nbsp;</p>
 				<h3>Reset Daily Random Verse:</h3>
 				<p>
 				<input type="submit" 
@@ -620,11 +631,12 @@ function vom_admin()
 					class="button" 
 					value="Reset Daily Random Verse &raquo;" 
 					onclick="javascript:document.location.href='options-general.php?page=verse-o-matic.php&action=reset_daily'" />
-					<br />Important Note: if you are using "Daily Specific", this clears ALL dates
-					before reseting a random date.</p>
+					<br /><?php _e('Important Note: if you are using "Daily Specific", this clears ALL dates
+					before reseting a random date.');?></p>
 			</div>
+            <p>&nbsp;</p>
 			<div class="wrap"><a name="add"></a>
-				<h2><?php _e('Add Verse'); ?></h2>
+				<h3><?php _e('Add Verse'); ?></h3>
 				<?php vom_edit_form(); ?>
 			</div>
 		<?php }?>
@@ -668,4 +680,56 @@ function vom_install()
 
    }
 } // end of the install function
+
+
+// This new function pulls in a VOTD feed from Good News Publishers (ESV) or Bible Gateway.
+function vom_get_rss($whichFeed)
+{
+	switch($whichFeed) {
+	
+	case "esv_votd":
+		$vom_feed_arr = array(
+			'feed' => "http://www.gnpcb.org/esv/share/rss2.0/daily/",
+			'item' => "item",
+			'desc' => "description",
+			'vrsn' => "ESV"
+			);
+		break;
+		
+	case "bg_votd";
+		$vom_feed_arr = array(
+			'feed' => "http://www.biblegateway.com/votd/get/?format=atom",
+			'item' => "entry",
+			'desc' => "content",
+			'vrsn' => "NIV"
+			);
+		break;
+	}
+
+	$doc = new DOMDocument();
+	$doc->load($vom_feed_arr['feed']);
+		
+	foreach ($doc->getElementsByTagName($vom_feed_arr['item']) as $node) {
+	
+		$verseRef = $node->getElementsByTagName('title')->item(0)->nodeValue;
+		$verseExp = explode(":",$verseRef);
+		$verseVerse = $verseExp[1];
+		$verseExp = explode(" ",$verseExp[0]);
+		$verseBook = $verseExp[0];
+		$verseChap = $verseExp[1];
+		
+		$vom_verse_arr = array ( 
+			1 => $vom_feed_arr['vrsn'],
+			2 => $verseBook,
+			3 => $verseChap,
+			4 => $verseVerse,
+			5 => $node->getElementsByTagName($vom_feed_arr['desc'])->item(0)->nodeValue,
+			6 => $node->getElementsByTagName('link')->item(0)->nodeValue,
+			);
+		array_push($vom_verse_arr, $itemRSS);
+	}
+	return $vom_verse_arr;
+}
+
+define("WP_VOM_CREDIT", "powered by <a href=\"http://butlerblog.com/verse-o-matic\">verse-o-matic</a>");
 ?>
